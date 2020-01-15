@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">last222</string>
+    <string name="checkbox">&#8195;Хранить логин во внешнем хранилище</string>
+    <string name="registration">Регистрация</string>
+    <string name="log">Вход</string>
+    <string name="login">Логин</string>
+    <string name="pass">Пароль</string>
+</resources>
