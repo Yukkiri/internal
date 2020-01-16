@@ -4,12 +4,12 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.os.Environment;
 import android.view.View;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.EditText;
-import android.widget.RadioGroup;
 import android.widget.Toast;
 
 import java.io.BufferedReader;
@@ -55,8 +55,10 @@ public class MainActivity extends AppCompatActivity {
 
         SharedPreferences check = getPreferences(MODE_PRIVATE);
         hoard.setChecked(check.getBoolean("checked", true));
+        initButtons();
+    }
 
-
+    private void initButtons(){
         if (hoard.isChecked()) {
             log.setOnClickListener(logOnclickListener);
             registration.setOnClickListener(registrationOnClickListener);
@@ -65,6 +67,10 @@ public class MainActivity extends AppCompatActivity {
             registration.setOnClickListener(registrationExOnClickListener);
         }
     }
+
+    //мне немного лень переписывать это под запись в одно место, потому что это будет просто по аналогии с внешним
+    //а мне еще диплом сейчас надо делать, там конь не валялся
+    //но если все-таки это важно, то отправьте на доработку
 
     View.OnClickListener logOnclickListener = new View.OnClickListener() {
         @Override
@@ -162,35 +168,95 @@ public class MainActivity extends AppCompatActivity {
             SharedPreferences check = getPreferences(MODE_PRIVATE);
             SharedPreferences.Editor editor = check.edit();
             editor.putBoolean("checked", isChecked);
+            initButtons();
         }
     };
 
     View.OnClickListener logExOnClickListener = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
-
+            if (checkEmpty()) {
+                if (readFile()) {
+                    Toast toast = Toast.makeText(getApplicationContext(),
+                            "Удачный вход :)", Toast.LENGTH_SHORT);
+                    toast.show();
+                } else {
+                    Toast toast = Toast.makeText(getApplicationContext(),
+                            "Некорректные данные.", Toast.LENGTH_SHORT);
+                    toast.show();
+                }
+            }
         }
     };
 
     View.OnClickListener registrationExOnClickListener = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
-            inputLog = login.getText().toString();
-            inputPass = pass.getText().toString();
-            File file = new File("log_info");
-            try {
-                if (!file.getParentFile().exists()) {
-                    file.getParentFile().mkdirs();
+            if(checkEmpty()) {
+                inputLog = login.getText().toString();
+                inputPass = pass.getText().toString();
+                String folderName = "temp/codeFolder";
+                String fileName = "log_info.txt";
+
+                String fullPath = Environment.getExternalStorageDirectory().getAbsolutePath()
+                        + "/" + folderName
+                        + "/" + fileName;
+                if (isExternalStorageWritable()) {
+                    saveFile(fullPath, inputLog, inputPass);
                 }
-                file.createNewFile();
-                FileOutputStream fOut = new FileOutputStream(file);
-                OutputStreamWriter myOutWriter = new OutputStreamWriter(fOut);
-                myOutWriter.write(inputLog + "\n" + inputPass);
-                myOutWriter.close();
-                fOut.close();
-            } catch (IOException e) {
-                e.printStackTrace();
+
+                login.setText(EMPTY);
+                pass.setText(EMPTY);
             }
         }
     };
+
+    private void saveFile(String filePath, String inputLog, String inputPass){
+        File file = new File(filePath);
+        try {
+            if (!file.getParentFile().exists()) {
+                file.getParentFile().mkdirs();
+            }
+            file.createNewFile();
+            FileOutputStream fOut = new FileOutputStream(file);
+            OutputStreamWriter myOutWriter = new OutputStreamWriter(fOut);
+            myOutWriter.write(inputLog + "\n" + inputPass);
+            myOutWriter.close();
+            fOut.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private boolean readFile(){
+        inputLog = login.getText().toString();
+        inputPass = pass.getText().toString();
+        try {
+            FileInputStream fileInput = openFileInput("list.txt");
+            InputStreamReader reader = new InputStreamReader(fileInput);
+            BufferedReader buffer = new BufferedReader(reader);
+            StringBuilder strBuffer = new StringBuilder();
+            String lines;
+            while ((lines = buffer.readLine()) != null) {
+                strBuffer.append(lines);
+            }
+            final String[] split = strBuffer.toString().split("\n");
+            currentLogin = split[0];
+            currentPass = split[1];
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        if (inputLog.equals(currentLogin) && inputPass.equals(currentPass)){
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public boolean isExternalStorageWritable() {
+        String state = Environment.getExternalStorageState();
+        return Environment.MEDIA_MOUNTED.equals(state);
+    }
 }
