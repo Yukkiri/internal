@@ -35,6 +35,10 @@ public class MainActivity extends AppCompatActivity {
 
     private String currentLogin;
     private String currentPass;
+    private static String IS_HOARD_CHECKED = "is_hoard_checked";
+
+    SharedPreferences check;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,8 +57,9 @@ public class MainActivity extends AppCompatActivity {
 
         hoard.setOnCheckedChangeListener(hoardOnCheckedChangeListener);
 
-        SharedPreferences check = getPreferences(MODE_PRIVATE);
-        hoard.setChecked(check.getBoolean("checked", true));
+        //hoard.setChecked(check.getBoolean("checked", true));
+
+        getHoardCheck();
         initButtons();
     }
 
@@ -68,9 +73,26 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private void shared(){
+        //check = getPreferences(MODE_PRIVATE);
+        SharedPreferences.Editor myEditor = check.edit();
+        boolean isCheck = hoard.isChecked();
+        myEditor.putBoolean(IS_HOARD_CHECKED, isCheck);
+        myEditor.apply();
+
+        //это чисто для меня чтобы наглядно видеть когда метод отрабатывает
+        Toast.makeText(MainActivity.this, "выбор сохранен", Toast.LENGTH_SHORT).show();
+    }
+
     //мне немного лень переписывать это под запись в одно место, потому что это будет просто по аналогии с внешним
     //а мне еще диплом сейчас надо делать, там конь не валялся
     //но если все-таки это важно, то отправьте на доработку
+
+    private void getHoardCheck(){
+        check = getPreferences(MODE_PRIVATE);
+        boolean isCheck = check.getBoolean(IS_HOARD_CHECKED, false);
+        hoard.setChecked(isCheck);
+    }
 
     View.OnClickListener logOnclickListener = new View.OnClickListener() {
         @Override
@@ -165,9 +187,7 @@ public class MainActivity extends AppCompatActivity {
     CompoundButton.OnCheckedChangeListener hoardOnCheckedChangeListener = new CompoundButton.OnCheckedChangeListener() {
         @Override
         public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-            SharedPreferences check = getPreferences(MODE_PRIVATE);
-            SharedPreferences.Editor editor = check.edit();
-            editor.putBoolean("checked", isChecked);
+            shared();
             initButtons();
         }
     };
